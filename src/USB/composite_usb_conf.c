@@ -34,13 +34,14 @@
 #include "dfu.h"
 #include "cdc.h"
 #include "vcdc.h"
+#include "webusb.h"
 
 #include "config.h"
 
 static const struct usb_device_descriptor dev = {
     .bLength = USB_DT_DEVICE_SIZE,
     .bDescriptorType = USB_DT_DEVICE,
-    .bcdUSB = 0x0200,
+    .bcdUSB = 0x0210,
     .bDeviceClass = USB_CLASS_MISCELLANEOUS_DEVICE,
     .bDeviceSubClass = USB_MISC_SUBCLASS_COMMON,
     .bDeviceProtocol = USB_MISC_PROTOCOL_INTERFACE_ASSOCIATION_DESCRIPTOR,
@@ -336,6 +337,18 @@ static const struct usb_config_descriptor config = {
     .interface = interfaces,
 };
 
+static const struct usb_device_capability_descriptor* capabilities[] = {
+    (const struct usb_device_capability_descriptor*)&webusb_platform,
+};
+
+static const struct usb_bos_descriptor bos = {
+    .bLength = USB_DT_BOS_SIZE,
+    .bDescriptorType = USB_DT_BOS,
+    .wTotalLength = USB_DT_BOS_SIZE + sizeof(webusb_platform),
+    .bNumDeviceCaps = sizeof(capabilities)/sizeof(capabilities[0]),
+    .capabilities = capabilities
+};
+
 static char serial_number[USB_SERIAL_NUM_LENGTH+1] = "000000000000000000000000";
 
 static const char *usb_strings[] = {
@@ -348,6 +361,7 @@ static const char *usb_strings[] = {
     (PRODUCT_NAME " DFU"),
     "SLCAN CDC Control",
     "SLCAN CDC Data",
+    "http://www.example.com",
 };
 
 void cmp_set_usb_serial_number(const char* serial) {
@@ -455,7 +469,7 @@ usbd_device* cmp_usb_setup(void) {
     int num_strings = sizeof(usb_strings)/sizeof(const char*);
 
     const usbd_driver* driver = target_usb_init();
-    usbd_device* usbd_dev = usbd_init(driver, &dev, &config,
+    usbd_device* usbd_dev = usbd_init(driver, &dev, &config, &bos,
                                       usb_strings, num_strings,
                                       usbd_control_buffer, sizeof(usbd_control_buffer));
     usbd_register_set_config_callback(usbd_dev, cmp_usb_set_config);

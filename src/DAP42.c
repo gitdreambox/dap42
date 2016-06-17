@@ -29,6 +29,7 @@
 #include "USB/cdc.h"
 #include "USB/vcdc.h"
 #include "USB/dfu.h"
+#include "USB/webusb.h"
 
 #include "DAP/app.h"
 #include "DAP/CMSIS_DAP_config.h"
@@ -68,6 +69,14 @@ static bool do_reset_to_dfu = false;
 static void on_dfu_request(void) {
     do_reset_to_dfu = true;
 }
+
+static const char* http_urls[] = {
+    "localhost:8000",
+};
+
+static const char* https_urls[] = {
+    "localhost:8000",
+};
 
 int main(void) {
     if (DFU_AVAILABLE) {
@@ -116,6 +125,9 @@ int main(void) {
     if (DFU_AVAILABLE) {
         dfu_setup(usbd_dev, &on_dfu_request);
     }
+
+    webusb_setup(http_urls, sizeof(http_urls)/sizeof(http_urls[0]),
+                 https_urls, sizeof(https_urls)/sizeof(https_urls[0]));
 
     tick_start();
 
